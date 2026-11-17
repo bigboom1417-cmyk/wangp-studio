@@ -1,0 +1,8 @@
+library/
+mem-stopped.json
+mem.ps1
+app/jobs.json
+__pycache__/
+*.mp4
+*.png
+debug.log

@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0d">
+<title>Studio</title>
+<style>
+:root{--bg:#0b0b0d;--s1:#131317;--s2:#1b1b21;--line:#26262e;--tx:#ececf1;--mu:#8a8a97;--ac:#d6ff3e;--red:#ff6b6b;
+--rail:76px;--rail-h:0px;--bar:150px;--r:16px;
+--f:system-ui,-apple-system,"Segoe UI",Tahoma,"Noto Sans Arabic",sans-serif}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font:15px/1.45 var(--f);-webkit-font-smoothing:antialiased;overflow:hidden}
+button,select,textarea,input{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+[hidden]{display:none!important}
+
+/* rail */
+nav{position:fixed;inset:0 auto 0 0;width:var(--rail);background:var(--s1);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 0;z-index:5}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--ac);color:#0b0b0d;font-weight:800;display:grid;place-items:center;margin-bottom:14px;position:relative}
+.logo.busy::after{content:"";position:absolute;right:-3px;top:-3px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--s1);animation:pulse 1.2s infinite}
+nav button{width:60px;min-height:56px;border-radius:12px;color:var(--mu);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;letter-spacing:.02em;transition:color .15s,background .15s}
+nav button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+nav button:hover{color:var(--tx);background:var(--s2)}
+nav button[aria-current=true]{color:var(--ac);background:var(--s2)}
+
+/* feed */
+main{position:fixed;inset:0 0 0 var(--rail);overflow-y:auto;padding:28px 28px calc(var(--bar) + 36px)}
+.feed{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;max-width:1500px;margin:0 auto}
+.empty{grid-column:1/-1;text-align:center;color:var(--mu);padding:12vh 0}
+.empty b{display:block;color:var(--tx);font-size:22px;margin-bottom:6px;font-weight:650}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;animation:in .3s ease both}
+.media{position:relative;background:var(--s2);width:100%;display:grid;place-items:center;overflow:hidden}
+.media video,.media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.media video{cursor:pointer}
+.ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:14px;color:var(--mu);font-size:13px}
+.ph b{color:var(--tx);font-weight:600;font-size:14px}
+.card.queued .media,.card.running .media{background:linear-gradient(110deg,var(--s2) 30%,#25252d 50%,var(--s2) 70%) 0 0/250% 100%;animation:sh 1.8s linear infinite}
+.card.error .media{background:#241517}
+.card.error .ph{color:var(--red);font-size:13px;overflow:auto}
+.meta{padding:12px 14px 6px}
+.meta p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;min-height:2.9em;unicode-bidi:plaintext}
+.tags{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--mu)}
+.tags .st{margin-inline-start:auto;font-variant-numeric:tabular-nums}
+.card.error .st{color:var(--red)}
+.card.running .st{color:var(--ac)}
+.acts{display:flex;gap:2px;padding:4px 8px 8px}
+.acts a,.acts button{min-height:40px;min-width:40px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;color:var(--mu);font-size:13px;text-decoration:none;transition:color .15s,background .15s}
+.acts a:hover,.acts button:hover{color:var(--tx);background:var(--s2)}
+.acts .del.sure{color:var(--red)}
+.acts .del{margin-inline-start:auto}
+
+/* prompt bar */
+#bar{position:fixed;left:calc(var(--rail) + 20px);right:20px;bottom:20px;max-width:880px;margin:0 auto;background:rgba(27,27,33,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid #33333d;border-radius:22px;padding:12px;z-index:4;box-shadow:0 18px 50px rgba(0,0,0,.55);transition:border-color .15s}
+#bar.drag{border-color:var(--ac)}
+#err{color:var(--red);font-size:13.5px;padding:2px 6px 8px}
+#slots{display:flex;gap:10px;flex-wrap:wrap;padding:0 2px 10px}
+.slot{position:relative;width:64px;height:64px;border-radius:12px;border:1px dashed #44444f;color:var(--mu);font-size:10.5px;line-height:1.15;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;transition:border-color .15s,color .15s;overflow:hidden}
+.slot:hover{border-color:var(--ac);color:var(--tx)}
+.slot.full{border-style:solid;border-color:var(--line);padding:0}
+.slot img,.slot video{width:100%;height:100%;object-fit:cover}
+.slot .tag{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.72);color:#fff;font:600 10px/1.6 var(--f);font-style:normal;text-align:center}
+.slot .aud{font-size:10px;padding:4px;word-break:break-all;color:var(--tx)}
+.slot i{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.72);color:#fff;font-style:normal;display:grid;place-items:center;font-size:13px}
+.slotw{position:relative}
+.slotw .x{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:#000;border:1px solid #444;color:#fff;font-size:14px;line-height:1;z-index:1}
+#prompt{width:100%;resize:none;background:none;border:0;outline:0;padding:6px 8px;min-height:48px;max-height:30vh;font-size:16px;line-height:1.5}
+#prompt::placeholder{color:var(--mu)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.chip{min-height:40px;padding:0 14px;border-radius:999px;background:var(--s1);border:1px solid var(--line);color:var(--tx);font-size:13.5px;display:inline-flex;align-items:center;gap:8px;transition:border-color .15s,background .15s}
+.chip:hover{border-color:#44444f}
+select.chip{appearance:none;-webkit-appearance:none;padding-inline-end:12px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ac);border-color:var(--ac);color:#0b0b0d;font-weight:600}
+.seg{display:inline-flex;background:var(--s1);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{min-height:34px;padding:0 14px;border-radius:999px;font-size:13.5px;color:var(--mu);transition:background .15s,color .15s}
+.seg button[aria-pressed=true]{background:var(--ac);color:#0b0b0d;font-weight:600}
+.rng{gap:10px}
+.rng input{width:96px;accent-color:var(--ac)}
+.rng output{min-width:2.4em;font-variant-numeric:tabular-nums;color:var(--mu)}
+#go{margin-inline-start:auto;min-height:44px;padding:0 22px;border-radius:999px;background:var(--ac);color:#0b0b0d;font-weight:700;display:inline-flex;align-items:center;gap:8px;transition:transform .12s,filter .15s}
+#go:hover{filter:brightness(1.08)}
+#go:active{transform:scale(.96)}
+#go[disabled]{opacity:.5;cursor:default}
+
+/* manga viewer */
+#mv{position:fixed;inset:0;z-index:20;background:rgba(5,5,7,.96);overflow-y:auto;padding:18px 18px 60px}
+#mv header{position:sticky;top:-18px;z-index:2;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(5,5,7,.96);padding:10px 0 12px;max-width:900px;margin:0 auto}
+#mv h2{font-size:19px;margin-inline-end:auto;unicode-bidi:plaintext}
+#mv .cast{display:flex;gap:10px;overflow-x:auto;max-width:900px;margin:0 auto 18px;padding-bottom:6px}
+#mv .cast figure{flex:0 0 120px;margin:0;text-align:center;font-size:12px;color:var(--mu)}
+#mv .cast img{width:120px;height:120px;object-fit:cover;border-radius:10px;background:#fff}
+.pg{max-width:900px;margin:0 auto 26px}
+.sheet{position:relative;container-type:inline-size;background:#fff;border-radius:6px;overflow:hidden;touch-action:pan-y}
+.sheet img{width:100%;display:block;user-select:none;-webkit-user-drag:none}
+.bub{position:absolute;background:#fff;color:#111;border:2px solid #111;border-radius:50%/42%;display:flex;align-items:center;justify-content:center;text-align:center;padding:2.5% 4%;font:600 2.3cqw/1.25 "Comic Sans MS","Noto Sans Arabic",system-ui,sans-serif;cursor:move;overflow:hidden;unicode-bidi:plaintext}
+.bub.caption{border-radius:2px;background:#fff7c2;font-weight:500}
+.bub:focus{outline:2px solid var(--ac)}
+.bub .rs{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 50%,#111 50%)}
+.pgbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;color:var(--mu);font-size:13px}
+.pgbar input{flex:1;min-width:160px;min-height:40px;border-radius:999px;background:var(--s1);border:1px solid var(--line);padding:0 14px}
+
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+@keyframes sh{to{background-position:-150% 0}}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+@media (max-width:700px){
+:root{--rail-h:calc(60px + env(safe-area-inset-bottom))}
+nav{inset:auto 0 0 0;width:auto;height:var(--rail-h);flex-direction:row;justify-content:space-around;padding:0 6px env(safe-area-inset-bottom);border-right:0;border-top:1px solid var(--line);gap:0}
+.logo{display:none}
+nav button{flex:1;min-height:56px}
+main{inset:0 0 var(--rail-h) 0;padding:14px 12px calc(var(--bar) + 20px)}
+.feed{grid-template-columns:repeat(2,1fr);gap:10px}
+.meta{padding:10px 10px 4px}.meta p{font-size:13px}
+.acts{padding:2px 4px 6px}.acts a,.acts button{padding:0 8px}
+#bar{left:8px;right:8px;bottom:calc(var(--rail-h) + 8px);border-radius:20px;padding:10px}
+.row{gap:6px}.chip{padding:0 11px;font-size:13px}.seg button{padding:0 10px;font-size:13px}
+.rng input{width:72px}
+#go{padding:0 18px}
+}
+</style>
+</head>
+<body>
+<nav aria-label="Sections">
+  <div class="logo" id="logo" aria-hidden="true">S</div>
+  <button data-v="image" aria-label="Image"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 4 3.5 3-2.5 4 3.5"/></svg>Image</button>
+  <button data-v="video" aria-label="Video"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M10.5 9.5v5l4.2-2.5z"/></svg>Video</button>
+  <button data-v="edit" aria-label="Edit"><svg viewBox="0 0 24 24"><path d="M5 7h9M18 7h1M5 17h1M10 17h9"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Edit</button>
+  <button data-v="genjutsu" aria-label="Genjutsu"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/><path d="M12 4v4.8M12 15.2V20M4 12h4.8M15.2 12H20"/></svg>Genjutsu</button>
+  <button data-v="manga" aria-label="Manga"><svg viewBox="0 0 24 24"><path d="M4 5.5C6.5 4 9.5 4 12 5.5v14c-2.5-1.5-5.5-1.5-8 0z"/><path d="M20 5.5C17.5 4 14.5 4 12 5.5v14c2.5-1.5 5.5-1.5 8 0z"/></svg>Manga</button>
+  <button data-v="library" aria-label="Library"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>Library</button>
+</nav>
+
+<main id="main"><div class="feed" id="feed"></div></main>
+
+<form id="bar" autocomplete="off">
+  <div id="err" role="alert" hidden></div>
+  <div id="slots"></div>
+  <textarea id="prompt" dir="auto" rows="1" aria-label="Prompt" placeholder="Describe what you want…  اكتب وصفك هنا"></textarea>
+  <div class="row">
+    <span class="seg" id="vidseg" role="group" aria-label="Video type" hidden>
+      <button type="button" data-c="create" aria-pressed="true">Create</button>
+      <button type="button" data-c="refs" aria-pressed="false">References</button>
+    </span>
+    <span class="seg" id="edseg" role="group" aria-label="Edit type" hidden>
+      <button type="button" data-e="restyle" aria-pressed="true">Restyle / relight</button>
+      <button type="button" data-e="look" aria-pressed="false">Change my look</button>
+    </span>
+    <span class="seg" id="gseg" role="group" aria-label="Genjutsu type" hidden>
+      <button type="button" data-g="swap" aria-pressed="true" title="Recast the people, keep motion, camera and sound">Motion transfer</button>
+      <button type="button" data-g="edit" aria-pressed="false" title="Change objects, place, weather, light; people stay">Object swap</button>
+      <button type="button" data-g="auto" aria-pressed="false" title="Picks the change type for you">Lite</button>
+    </span>
+    <select class="chip" id="style" aria-label="Style" hidden><option value="">No style</option><option>Anime</option><option>Studio Ghibli style painted anime</option><option>Pixar style 3D animation</option><option>Claymation</option><option>LEGO bricks</option><option>Comic book ink</option><option>Watercolor painting</option><option>Oil painting</option><option>Pencil sketch</option><option>Pixel art</option><option>Cyberpunk neon</option><option>Black and white film noir</option><option>1970s film photo</option><option>Photoreal video game (Unreal Engine)</option><option>Plush toys</option><option>Paper cutout</option><option>Ukiyo-e woodblock print</option><option>Low-poly 3D</option><option>Stop-motion puppets</option><option>Medieval painting</option></select>
+    <input class="chip" id="pins" aria-label="Paint frames at these seconds (optional)" placeholder="Pin at s: 1.5, 6" size="12" hidden>
+    <button type="button" class="chip" id="up" aria-pressed="false" aria-label="Upscale x2" hidden>Upscale x2</button>
+    <select class="chip" id="mstyle" aria-label="Manga style" hidden><option value="bw">B&amp;W manga</option><option value="color">Color manga</option><option value="comic">Western comic</option><option value="webtoon">Webtoon</option></select>
+    <select class="chip" id="lang" aria-label="Dialogue language" hidden><option value="ar">العربية</option><option value="en">English</option><option value="ja">日本語</option><option value="fr">Français</option><option value="es">Español</option><option value="tr">Türkçe</option></select>
+    <select class="chip" id="chap" aria-label="Chapters" hidden><option value="1">1 chapter</option><option value="2">2 chapters</option><option value="3">3 chapters</option><option value="5">5 chapters</option></select>
+    <select class="chip" id="ppc" aria-label="Pages per chapter" hidden><option value="2">2 pages</option><option value="4" selected>4 pages</option><option value="6">6 pages</option><option value="8">8 pages</option></select>
+    <select class="chip" id="ratio" aria-label="Ratio"><option>9:16</option><option>16:9</option><option>1:1</option></select>
+    <select class="chip" id="quality" aria-label="Quality"><option value="480">480p</option><option value="720">720p</option></select>
+    <select class="chip" id="seconds" aria-label="Length"><option value="2">2 s</option><option value="3">3 s</option><option value="4">4 s</option><option value="5" selected>5 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="30">30 s</option></select>
+    <label class="chip rng" id="strw"><span>Strength</span><input type="range" id="strength" min="0.3" max="0.8" step="0.05" value="0.5" aria-label="Strength"><output id="strv">0.5</output></label>
+    <button type="button" class="chip" id="smooth" aria-pressed="false" aria-label="48 fps smoothing">48 fps</button>
+    <button type="submit" id="go" aria-label="Generate">Generate <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
+</form>
+
+<script>
+const $=s=>document.querySelector(s), feed=$('#feed'), bar=$('#bar'), prompt_=$('#prompt');
+const VIEW_MODES={image:['image'],video:['create','refs'],edit:['restyle','look'],genjutsu:['genjutsu'],manga:['manga','manga_page'],library:null};
+const SLOTS={ // mode -> [field, label, max count (0 = single), accept]
+ image:[['refs','Reference',1,'image/*']],
+ refs:[['refs','Picture',9,'image/*'],['vrefs','Video',3,'video/*'],['arefs','Audio',3,'audio/*']],
+ create:[['start','Start frame',0,'image/*'],['end','End frame',0,'image/*']],
+ restyle:[['source','Source video',0,'video/*']],
+ look:[['source','Source video',0,'video/*'],['start','Start frame',0,'image/*'],['end','End frame',0,'image/*']],
+ genjutsu:[['source','Video',20,'video/*'],['refs','Reference',8,'image/*']],
+ manga:[['refs','Cast picture',9,'image/*'],['pagerefs','Page to recreate',12,'image/*']]}; // several videos = a batch, one job each
+let view='video', edit='restyle', vid='create', gm='swap', files={}, nodes=new Map(), jobs=[], timer;
+const mode=()=>view==='edit'?edit:view==='video'?vid:view==='genjutsu'?'genjutsu':view==='manga'?'manga':'image';
+const total=()=>['refs','vrefs','arefs'].reduce((n,k)=>n+(files[k]||[]).length,0); // References mode: model takes 12 files in total
+const urls=new WeakMap(), url=f=>urls.get(f)||(urls.set(f,URL.createObjectURL(f)),urls.get(f));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---- prompt bar ---- */
+function showErr(t){const e=$('#err');e.textContent=t||'';e.hidden=!t}
+function renderSlots(){
+  const m=mode(), box=$('#slots'); box.innerHTML='';
+  for(const [f,label,multi,acc] of (SLOTS[m]||[])){
+    const list=[].concat(files[f]||[]);
+    for(const [i,file] of list.entries()){
+      const w=document.createElement('div');w.className='slotw';
+      const tag=m==='refs'?`<em class="tag">${label} ${i+1}</em>`:'';
+      w.innerHTML=`<span class="slot full">${file.type.startsWith('video')?`<video src="${url(file)}#t=0.1" muted playsinline preload="metadata"></video>`:file.type.startsWith('audio')?`<span class="aud">♪ ${esc(file.name)}</span>`:`<img src="${url(file)}" alt="">`}${tag}</span><button type="button" class="x" aria-label="Remove ${label} ${i+1}">×</button>`;
+      w.querySelector('.x').onclick=()=>{multi?files[f].splice(i,1):delete files[f];renderSlots()};
+      box.append(w);
+    }
+    if(multi?list.length<(m==='refs'?(total()>=12?0:multi):99):!list.length){
+      const b=document.createElement('button');b.type='button';b.className='slot';b.setAttribute('aria-label','Add '+label);b.textContent='+ '+label;
+      const inp=document.createElement('input');inp.type='file';inp.accept=acc;inp.hidden=true;inp.multiple=!!multi;
+      inp.onchange=()=>{put([...inp.files],f);inp.value=''};
+      b.onclick=()=>inp.click();box.append(b,inp);
+    }
+  }
+}
+function put(fl,field){ // field given by a slot button, else guessed from the file type
+  for(const file of fl){
+    const slots=SLOTS[mode()]||[], vid=file.type.startsWith('video'), kind=file.type.split('/')[0];
+    let f=field||(mode()==='refs'?slots.find(s=>s[3]===kind+'/*')?.[0]:vid?slots.find(s=>s[0]==='source')?.[0]:(slots.find(s=>s[2]&&s[3]==='image/*'&&!vid)||slots.find(s=>s[3]==='image/*'&&!files[s[0]]))?.[0]);
+    if(!f)continue;
+    const multi=slots.find(s=>s[0]===f)?.[2];
+    if(mode()==='refs'&&((files[f]||[]).length>=multi||total()>=12)){showErr('At most 12 references: up to 9 pictures, 3 videos, 3 audio.');continue}
+    multi?(files[f]=(files[f]||[]).concat(file)):files[f]=file;
+  }
+  renderSlots();
+}
+function setMode(){
+  const m=mode(), vidm=m!=='image';
+  document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===view));
+  bar.hidden=view==='library';
+  $('#edseg').hidden=view!=='edit'; $('#vidseg').hidden=view!=='video';
+  document.querySelectorAll('#edseg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.e===edit));
+  document.querySelectorAll('#vidseg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===vid));
+  const gj=m==='genjutsu'; $('#gseg').hidden=$('#style').hidden=$('#pins').hidden=$('#up').hidden=!gj; const mg=m==='manga'; ['#mstyle','#lang','#chap','#ppc'].forEach(x=>$(x).hidden=!mg); $('#ratio').hidden=gj||mg;
+  document.querySelectorAll('#gseg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===gm));
+  $('#quality').hidden=!vidm||mg; $('#seconds').hidden=m!=='create'&&m!=='refs'; $('#strw').hidden=m!=='restyle'; $('#smooth').hidden=!vidm||gj||mg;
+  prompt_.placeholder=mg?'Your manga idea or script…  فكرة القصة أو النص. Add manga pages to recreate them with your cast':gj?(gm==='edit'?'What changes? e.g. the car becomes a horse wagon, a dragon in the distance':'Who do they become? e.g. the man on the left becomes a knight in full plate armor'):m==='restyle'?'Describe the new style or light…  صف الأسلوب الجديد':m==='look'?'Describe your new look…  صف مظهرك الجديد':m==='refs'?'Use the labels: <Picture 1> is Ahmed… Blank line = next part of a long clip':m==='create'?'Describe what you want…  Blank line = next part of a long clip':'Describe what you want…  اكتب وصفك هنا';
+  renderSlots(); applyFilter(); fit();
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{view=b.dataset.v;showErr();setMode();$('#main').scrollTop=0});
+document.querySelectorAll('#edseg button').forEach(b=>b.onclick=()=>{edit=b.dataset.e;files={};showErr();setMode()});
+document.querySelectorAll('#vidseg button').forEach(b=>b.onclick=()=>{vid=b.dataset.c;files={};showErr();setMode()});
+document.querySelectorAll('#gseg button').forEach(b=>b.onclick=()=>{gm=b.dataset.g;setMode()});
+$('#up').onclick=e=>e.currentTarget.setAttribute('aria-pressed',e.currentTarget.getAttribute('aria-pressed')!=='true');
+$('#smooth').onclick=e=>e.currentTarget.setAttribute('aria-pressed',e.currentTarget.getAttribute('aria-pressed')!=='true');
+$('#strength').oninput=e=>$('#strv').value=(+e.target.value).toFixed(2).replace(/0$/,'');
+function fit(){prompt_.style.height='auto';prompt_.style.height=Math.min(prompt_.scrollHeight,innerHeight*.3)+'px'}
+prompt_.oninput=fit;
+prompt_.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&matchMedia('(hover:hover)').matches){e.preventDefault();bar.requestSubmit()}};
+new ResizeObserver(()=>document.documentElement.style.setProperty('--bar',bar.hidden?'0px':bar.offsetHeight+'px')).observe(bar);
+['dragenter','dragover'].forEach(t=>bar.addEventListener(t,e=>{e.preventDefault();bar.classList.add('drag')}));
+['dragleave','drop'].forEach(t=>bar.addEventListener(t,e=>{e.preventDefault();bar.classList.remove('drag')}));
+bar.addEventListener('drop',e=>put([...e.dataTransfer.files]));
+addEventListener('paste',e=>{const f=[...(e.clipboardData?.files||[])];if(f.length&&!bar.hidden)put(f)});
+
+bar.onsubmit=async e=>{
+  e.preventDefault(); showErr();
+  const m=mode(), fd=new FormData();
+  fd.set('mode',m); fd.set('prompt',prompt_.value); fd.set('ratio',$('#ratio').value);
+  if(m!=='image'){fd.set('quality',$('#quality').value);fd.set('smooth',$('#smooth').getAttribute('aria-pressed')==='true'?'1':'0')}
+  if(m==='create'||m==='refs')fd.set('seconds',$('#seconds').value);
+  if(m==='restyle')fd.set('strength',$('#strength').value);
+  if(m==='manga'){fd.set('style',$('#mstyle').value);fd.set('lang',$('#lang').value);fd.set('chapters',$('#chap').value);fd.set('pages',$('#ppc').value)}
+  if(m==='genjutsu'){fd.set('gmode',gm);fd.set('style',$('#style').value);fd.set('pins',$('#pins').value);fd.set('upscale',$('#up').getAttribute('aria-pressed')==='true'?'1':'0')}
+  for(const [f] of SLOTS[m])if(!(m==='genjutsu'&&f==='source'))for(const file of [].concat(files[f]||[]))fd.append(f,file);
+  const batch=m==='genjutsu'?[].concat(files.source||[]):[null];
+  if(m==='genjutsu'&&!batch.length){showErr('Add a video first.');return}
+  const go=$('#go');go.disabled=true;
+  try{
+    for(const v of batch){ // Genjutsu batch: same settings, one job per video
+      if(v)fd.set('source',v);
+      const r=await fetch('/api/jobs',{method:'POST',body:fd});
+      if(!r.ok){const j=await r.json().catch(()=>({}));showErr((v?v.name+': ':'')+(j.detail||'Something went wrong ('+r.status+')'));return}
+    }
+    prompt_.value='';files={};renderSlots();fit();poll(true);
+  }catch(x){showErr('Cannot reach the Studio server.')}
+  finally{go.disabled=false}
+};
+
+/* ---- feed ---- */
+const fmt=s=>s>=60?Math.floor(s/60)+'m '+String(s%60).padStart(2,'0')+'s':s+'s';
+const elapsed=j=>Math.max(0,Math.round((Date.now()-Date.parse(j.created))/1000));
+function mkCard(j){
+  const c=document.createElement('article');c.className='card';c.dataset.id=j.id;
+  const r=(j.params?.ratio||'9:16').replace(':','/');
+  c.innerHTML=`<div class="media" style="aspect-ratio:${r}"><div class="ph"></div></div>
+   <div class="meta"><p dir="auto"></p><div class="tags"><span class="md"></span><span class="st"></span></div></div>
+   <div class="acts"><a class="dl" aria-label="Download" title="Download" download hidden>Download</a><button type="button" class="op" aria-label="Open book" hidden>Open</button><button type="button" class="re" aria-label="Reuse prompt" title="Reuse prompt">Reuse</button><button type="button" class="del" aria-label="Delete" title="Delete">Delete</button></div>`;
+  c.querySelector('p').textContent=j.prompt;
+  c.querySelector('.md').textContent={image:'Image',create:'Video',refs:'References',restyle:'Restyle',look:'My look',genjutsu:'Genjutsu',manga:'Manga',manga_page:'Manga page'}[j.mode]||j.mode;
+  c.querySelector('.re').onclick=()=>{view=j.mode==='image'?'image':j.mode==='genjutsu'?'genjutsu':j.mode.startsWith('manga')?'manga':j.mode==='create'||j.mode==='refs'?'video':'edit';if(j.mode==='genjutsu')gm=j.params?.gmode||'swap';if(view==='edit')edit=j.mode;if(view==='video')vid=j.mode;files={};setMode();prompt_.value=j.prompt;fit();prompt_.focus()};
+  const op=c.querySelector('.op'), bid=j.mode==='manga'?j.id:j.params?.book;
+  if(bid){op.hidden=false;op.onclick=()=>openBook(bid)}
+  const d=c.querySelector('.del');let t;
+  d.onclick=async()=>{
+    if(!d.classList.contains('sure')){d.classList.add('sure');d.textContent='Sure?';t=setTimeout(()=>{d.classList.remove('sure');d.textContent='Delete'},3000);return}
+    clearTimeout(t);const r=await fetch('/api/jobs/'+c.dataset.id,{method:'DELETE'});
+    r.ok?poll(true):(d.classList.remove('sure'),d.textContent='Delete',showErr('That job is still running; wait for it to finish.'));
+  };
+  return c;
+}
+function upd(c,j){
+  const o=c._j;c._j=j; if(o&&o.status===j.status&&o.progress===j.progress&&o.error===j.error&&o.file===j.file)return;
+  c.classList.remove('queued','running','done','error');c.classList.add(j.status);
+  const ph=c.querySelector('.ph'), media=c.querySelector('.media');
+  if(j.status==='done'&&j.file){
+    if(!c._media){ // built once: polls never touch it again
+      const src='/library/'+encodeURIComponent(j.file), vid=/\.(mp4|webm|mov)$/i.test(j.file), el=document.createElement(vid?'video':'img');
+      if(vid){el.src=src+'#t=0.1';el.loop=el.muted=el.playsInline=true;el.preload='metadata';el.setAttribute('aria-label','Result video, tap to play');
+        el.onpointerenter=e=>{if(e.pointerType==='mouse'){el.muted=true;el.play().catch(()=>{})}};
+        el.onpointerleave=e=>{if(e.pointerType==='mouse')el.pause()};
+        el.onclick=()=>{el.muted=false;el.paused?el.play().catch(()=>{}):el.pause()}}
+      else{el.src=src;el.alt=j.prompt;el.loading='lazy'}
+      media.append(el);c._media=el;
+      const a=c.querySelector('.dl');a.href=src;a.hidden=false;
+    }
+    ph.hidden=true;
+  }else{
+    ph.hidden=false;
+    ph.innerHTML=j.status==='error'?'<b>Failed</b><span></span>':j.status==='queued'?'<b>Waiting in line</b>':'<b>Working</b><span></span>';
+    const s=ph.querySelector('span'); if(s)s.textContent=j.status==='error'?j.error:(j.progress||'starting…');
+  }
+  tick(c);
+}
+function tick(c){
+  const j=c._j, st=c.querySelector('.st');
+  st.textContent=j.status==='done'?(j.took_s?fmt(j.took_s):'done'):j.status==='error'?'error':j.status==='queued'?'queued':(j.progress?j.progress+' · ':'')+fmt(elapsed(j));
+}
+function applyFilter(){
+  const ok=VIEW_MODES[view];let n=0;
+  for(const [id,c] of nodes){const show=ok?ok.includes(c._j.mode):c._j.status==='done';c.hidden=!show;n+=show}
+  let e=$('.empty');
+  if(!n){if(!e){e=document.createElement('div');e.className='empty';feed.append(e)}
+    e.innerHTML=`<b>${view==='library'?'Nothing saved yet':'Your results land here'}</b>${view==='library'?'Finished images and videos show up in this list.':'Type a prompt below and press Generate.'}`}
+  else e?.remove();
+}
+function sync(list){
+  jobs=list; const ids=new Set(list.map(j=>j.id));
+  for(const [id,c] of nodes)if(!ids.has(id)){c.remove();nodes.delete(id)}
+  let prev=null;
+  for(const j of list){
+    let c=nodes.get(j.id);
+    if(!c){c=mkCard(j);nodes.set(j.id,c)}
+    upd(c,j);
+    const want=prev?prev.nextElementSibling:feed.firstElementChild;
+    if(want!==c)feed.insertBefore(c,want); // only moves when out of place, so playing videos are left alone
+    prev=c;
+  }
+  applyFilter();
+}
+async function poll(now){
+  clearTimeout(timer);
+  let busy=false;
+  try{
+    const r=await fetch('/api/jobs',{cache:'no-store'}), d=await r.json();
+    sync(d.jobs);busy=d.jobs.some(j=>j.status==='queued'||j.status==='running');$('#logo').classList.toggle('busy',!!d.busy||busy);
+  }catch(x){}
+  timer=setTimeout(poll,busy?2000:15000);
+}
+setInterval(()=>{for(const c of nodes.values())if(c._j.status==='running')tick(c)},1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});
+/* ---- manga viewer ---- */
+async function openBook(bid){
+  let mv=$('#mv'); if(!mv){mv=document.createElement('div');mv.id='mv';mv.setAttribute('role','dialog');mv.setAttribute('aria-modal','true');document.body.append(mv)}
+  const r=await fetch('/api/manga/'+bid,{cache:'no-store'}); if(!r.ok){showErr('That book is not ready yet.');return}
+  const b=await r.json(), src=n=>'/manga/'+bid+'/'+encodeURIComponent(n);
+  mv.hidden=false; mv.innerHTML=`<header><h2 dir="auto"></h2>
+   <button class="chip" data-x="png">PNG pages</button><button class="chip" data-x="pdf">PDF</button><button class="chip" data-x="cbz">CBZ</button><button class="chip" data-x="webtoon">Webtoon</button>
+   <button class="chip" id="mvx" aria-label="Close">Close ✕</button></header><div class="cast"></div><div class="pages"></div>`;
+  mv.querySelector('h2').textContent=b.title||'Manga';
+  mv.querySelector('#mvx').onclick=()=>{mv.hidden=true;mv.innerHTML=''};
+  for(const c of b.cast){const f=document.createElement('figure');f.innerHTML=`<img alt="" src="${src(c.sheet)}"><figcaption dir="auto"></figcaption>`;f.querySelector('figcaption').textContent=c.name;mv.querySelector('.cast').append(f)}
+  const pages=mv.querySelector('.pages');
+  b.pages.forEach((p,n)=>{
+    if(!p.image)return; // still being drawn
+    const w=document.createElement('section');w.className='pg';
+    w.innerHTML=`<div class="sheet"><img alt="Page ${n+1}" src="${src(p.image)}"></div>
+     <div class="pgbar"><span>Page ${n+1}${b.chapters?.length>1?' · '+esc(b.chapters[p.chapter]||''):''}</span><input dir="auto" placeholder="Edit this page: e.g. make it night" aria-label="Edit page ${n+1}"><button class="chip ed">Edit</button>${p.panels?'<button class="chip rd">Redraw</button>':''}<button class="chip ab">+ Bubble</button></div>`;
+    const sheet=w.querySelector('.sheet'); sheet._b=p.bubbles||[];
+    const save=()=>{clearTimeout(sheet._t);sheet._t=setTimeout(()=>fetch(`/api/manga/${bid}/page/${n}/bubbles`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(sheet._b)}),600)};
+    const draw=()=>{sheet.querySelectorAll('.bub').forEach(e=>e.remove());sheet._b.forEach(bb=>sheet.append(bubble(bb,sheet,save)))};
+    draw();
+    w.querySelector('.ab').onclick=()=>{sheet._b.push({who:'',text:'...',kind:'speech',x:.35,y:.4,w:.3,h:.12});draw();save()};
+    const job=async(action)=>{const fd=new FormData();fd.set('action',action);fd.set('prompt',w.querySelector('input').value);
+      const r=await fetch(`/api/manga/${bid}/page/${n}`,{method:'POST',body:fd});if(!r.ok){const j=await r.json().catch(()=>({}));alert(j.detail||'Failed');return}
+      w.querySelector('.pgbar span').textContent=`Page ${n+1} · queued: open the book again when its card is done`;poll(true)};
+    w.querySelector('.ed').onclick=()=>job('edit'); const rd=w.querySelector('.rd'); if(rd)rd.onclick=()=>job('redraw');
+    pages.append(w);
+  });
+  mv.querySelectorAll('[data-x]').forEach(x=>x.onclick=()=>exportBook(bid,x.dataset.x,b,mv));
+}
+function bubble(bb,sheet,save){ // drag to move, corner to resize, double-click to type
+  const e=document.createElement('div');e.className='bub'+(bb.kind==='caption'?' caption':'');e.contentEditable='true';e.dir='auto';e.textContent=bb.text;
+  const place=()=>Object.assign(e.style,{left:bb.x*100+'%',top:bb.y*100+'%',width:bb.w*100+'%',height:bb.h*100+'%'});place();
+  const rs=document.createElement('span');rs.className='rs';rs.contentEditable='false';e.append(rs);
+  e.oninput=()=>{bb.text=e.innerText.trim();if(!bb.text){sheet._b.splice(sheet._b.indexOf(bb),1);e.remove()}save()};
+  const drag=(ev,resize)=>{if(!resize&&document.activeElement===e)return;ev.preventDefault();const R=sheet.getBoundingClientRect(),x0=ev.clientX,y0=ev.clientY,s={...bb};
+    const mv=m=>{const dx=(m.clientX-x0)/R.width,dy=(m.clientY-y0)/R.height;
+      if(resize){bb.w=Math.max(.06,s.w+dx);bb.h=Math.max(.04,s.h+dy)}else{bb.x=Math.min(Math.max(0,s.x+dx),1-bb.w);bb.y=Math.min(Math.max(0,s.y+dy),1-bb.h)}place()};
+    const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);save()};
+    addEventListener('pointermove',mv);addEventListener('pointerup',up)};
+  e.onpointerdown=ev=>{if(ev.target!==rs&&ev.detail<2)drag(ev,false)};
+  rs.onpointerdown=ev=>{ev.stopPropagation();drag(ev,true)};
+  e.ondblclick=()=>e.focus();
+  return e;
+}
+async function letter(imgUrl,bubbles){ // the page with its bubbles drawn in, as a PNG blob
+  const img=new Image();img.src=imgUrl;await img.decode();
+  const W=img.naturalWidth,H=img.naturalHeight,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.drawImage(img,0,0);
+  for(const bb of bubbles){
+    const x=bb.x*W,y=bb.y*H,w=bb.w*W,h=bb.h*H;g.lineWidth=Math.max(2,W*.003);g.strokeStyle='#111';g.fillStyle=bb.kind==='caption'?'#fff7c2':'#fff';
+    g.beginPath();bb.kind==='caption'?g.rect(x,y,w,h):g.ellipse(x+w/2,y+h/2,w/2,h/2,0,0,Math.PI*2);g.fill();g.stroke();
+    g.direction=/[؀-ۿ]/.test(bb.text)?'rtl':'ltr';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#111';
+    let size=W*.023,lines=[];
+    for(;size>8;size*=.92){g.font=`600 ${size}px "Comic Sans MS","Noto Sans Arabic",sans-serif`;lines=[];let cur='';
+      for(const word of bb.text.split(/\s+/)){const t=cur?cur+' '+word:word;if(g.measureText(t).width>w*.78&&cur){lines.push(cur);cur=word}else cur=t}
+      lines.push(cur);if(lines.length*size*1.25<h*.8&&lines.every(l=>g.measureText(l).width<=w*.85))break}
+    lines.forEach((l,i)=>g.fillText(l,x+w/2,y+h/2+(i-(lines.length-1)/2)*size*1.25));
+  }
+  return new Promise(r=>c.toBlob(r,'image/png'));
+}
+async function exportBook(bid,fmt,b,mv){
+  const blobs=[];
+  for(const s of mv.querySelectorAll('.sheet'))blobs.push(await letter(s.querySelector('img').src,s._b));
+  const name=(b.title||'manga').replace(/[\\/:*?"<>|]/g,'');
+  const save=(blob,fn)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)};
+  if(fmt==='png'){blobs.forEach((bl,i)=>save(bl,`${name} ${String(i+1).padStart(2,'0')}.png`));return}
+  const fd=new FormData();fd.set('fmt',fmt);blobs.forEach((bl,i)=>fd.append('pages',bl,`${i}.png`));
+  const r=await fetch(`/api/manga/${bid}/export`,{method:'POST',body:fd});if(!r.ok){alert('Export failed');return}
+  save(await r.blob(),`${name}.${fmt==='webtoon'?'png':fmt}`);
+}
+setMode();poll();
+</script>
+</body>
+</html>
