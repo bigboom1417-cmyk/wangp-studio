@@ -4,6 +4,10 @@ A local, free, Higgsfield-style video studio that runs on one 12 GB GPU. It's a 
 [WanGP](https://github.com/deepbeepmeep/Wan2GP) running the MiniMax H3 models. Type a prompt, drop in references,
 and get video with sound. There's no subscription and no per-video cost.
 
+[![Demo: before/after of every mode (50 s)](docs/demo.jpg)](docs/demo.mp4)
+
+▶ **[Watch the 50 s demo](docs/demo.mp4)**: every mode, before and after.
+
 Built and measured on an RTX 5070 (12 GB VRAM) with 16 GB RAM.
 
 ## What it does
